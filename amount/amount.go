@@ -6,34 +6,31 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// UnsafeConvertToUint64 は decimal を float64 を経由して uint64 に変換する。
-// 精度欠損・アンダーフローが発生する危険な実装例。
-func UnsafeConvertToUint64(d decimal.Decimal) uint64 {
-	f, _ := d.Float64()
-	// 負数を uint64 にキャストすると最大値に化ける
-	return uint64(int64(f))
+// ImportedRow は DMS 経由でインポートされたデータの構造体。
+// DMS が decimal カラムを float64 に変換するため、フィールドが float64 になっている。
+type ImportedRow struct {
+	Amount float64
 }
 
-// UnsafeConvertDecimalDirectlyToUint64 は decimal を直接 uint64 にキャストする。
-// shopspring/decimal の BigInt() は小数部を切り捨てた *big.Int を返す。
-// big.Int.Uint64() は符号を無視して絶対値を返すため、負数は最大値に化けず絶対値になる。
-// いずれにせよ符号・小数部の情報が失われる危険な実装例。
-func UnsafeConvertDecimalDirectlyToUint64(d decimal.Decimal) uint64 {
-	// BigInt() は小数部を切り捨てた整数部を *big.Int で返す
-	return d.BigInt().Uint64()
+// DestinationRow はインポート先システムの構造体。
+// 金額を uint64 で持つ設計になっている。
+type DestinationRow struct {
+	Amount uint64
 }
 
-// SafeConvertToString は decimal を文字列として返す。
-// 精度を失わずに扱うための安全な実装例。
-func SafeConvertToString(d decimal.Decimal) string {
-	return d.String()
-}
-
-// SafeConvertToDecimal は文字列から decimal に変換する。
-func SafeConvertToDecimal(s string) (decimal.Decimal, error) {
-	d, err := decimal.NewFromString(s)
-	if err != nil {
-		return decimal.Zero, fmt.Errorf("decimal への変換に失敗しました: %w", err)
+// UnsafeMap は DMS インポート行をインポート先の struct に変換する。
+// float64 を uint64 にキャストするため、精度欠損・アンダーフローが発生する危険な実装例。
+func UnsafeMap(row ImportedRow) DestinationRow {
+	return DestinationRow{
+		Amount: uint64(row.Amount),
 	}
-	return d, nil
+}
+
+// SafeMap は DMS インポート行を精度を保ったまま文字列に変換する。
+func SafeMap(row ImportedRow) (string, error) {
+	d, err := decimal.NewFromString(fmt.Sprintf("%v", row.Amount))
+	if err != nil {
+		return "", fmt.Errorf("decimal への変換に失敗しました: %w", err)
+	}
+	return d.String(), nil
 }
