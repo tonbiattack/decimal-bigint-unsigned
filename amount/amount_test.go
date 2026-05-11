@@ -38,6 +38,43 @@ func TestUnsafeConvertToUint64_非常に小さい正の小数はゼロになる(
 	}
 }
 
+// TestUnsafeConvertDecimalDirectlyToUint64_正の小数は整数部だけになる は、小数部が切り捨てられることを示す。
+func TestUnsafeConvertDecimalDirectlyToUint64_正の小数は整数部だけになる(t *testing.T) {
+	d := decimal.RequireFromString("12345678.123456789012345678")
+	got := amount.UnsafeConvertDecimalDirectlyToUint64(d)
+	if got != 12345678 {
+		t.Errorf("got %d, want 12345678", got)
+	}
+}
+
+// TestUnsafeConvertDecimalDirectlyToUint64_負数は絶対値になる は、float64 経由と異なり最大値ではなく絶対値になることを示す。
+func TestUnsafeConvertDecimalDirectlyToUint64_負数は絶対値になる(t *testing.T) {
+	d := decimal.RequireFromString("-1")
+	got := amount.UnsafeConvertDecimalDirectlyToUint64(d)
+	// float64 経由（uint64 最大値）とは異なり、絶対値の 1 になる
+	if got != 1 {
+		t.Errorf("got %d, want 1", got)
+	}
+}
+
+// TestUnsafeConvertDecimalDirectlyToUint64_負の小数は絶対値の整数部になる は、負の小数が絶対値の整数部に化けることを示す。
+func TestUnsafeConvertDecimalDirectlyToUint64_負の小数は絶対値の整数部になる(t *testing.T) {
+	d := decimal.RequireFromString("-12345678.5")
+	got := amount.UnsafeConvertDecimalDirectlyToUint64(d)
+	if got != 12345678 {
+		t.Errorf("got %d, want 12345678", got)
+	}
+}
+
+// TestUnsafeConvertDecimalDirectlyToUint64_非常に小さい正の小数はゼロになる は、極小値がゼロに化けることを示す。
+func TestUnsafeConvertDecimalDirectlyToUint64_非常に小さい正の小数はゼロになる(t *testing.T) {
+	d := decimal.RequireFromString("0.000000000000000001")
+	got := amount.UnsafeConvertDecimalDirectlyToUint64(d)
+	if got != 0 {
+		t.Errorf("got %d, want 0", got)
+	}
+}
+
 // TestSafeConvertToString_精度を保ったまま文字列になる は、decimal を文字列変換すると精度が保たれることを示す。
 func TestSafeConvertToString_精度を保ったまま文字列になる(t *testing.T) {
 	input := "12345678.123456789012345678"

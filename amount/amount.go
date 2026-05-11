@@ -14,6 +14,15 @@ func UnsafeConvertToUint64(d decimal.Decimal) uint64 {
 	return uint64(int64(f))
 }
 
+// UnsafeConvertDecimalDirectlyToUint64 は decimal を直接 uint64 にキャストする。
+// shopspring/decimal の BigInt() は小数部を切り捨てた *big.Int を返す。
+// big.Int.Uint64() は符号を無視して絶対値を返すため、負数は最大値に化けず絶対値になる。
+// いずれにせよ符号・小数部の情報が失われる危険な実装例。
+func UnsafeConvertDecimalDirectlyToUint64(d decimal.Decimal) uint64 {
+	// BigInt() は小数部を切り捨てた整数部を *big.Int で返す
+	return d.BigInt().Uint64()
+}
+
 // SafeConvertToString は decimal を文字列として返す。
 // 精度を失わずに扱うための安全な実装例。
 func SafeConvertToString(d decimal.Decimal) string {
